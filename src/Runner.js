@@ -7,7 +7,7 @@ export default class Runner {
 
   constructor(args) {
     this._args = args;
-    this._towerPath = './towers/beginner/level001.json'
+    this._towerPath = args[2];
     this._params = 'this.param = 42;'
   }
 
@@ -17,6 +17,9 @@ export default class Runner {
     var player = this.renderPlayerParams(template);
     var config = this.addAbilitiesToConfig(tower);
     const { passed, events, score } = playLevel(config, player);
+    events.forEach(function (event) {
+      console.log(event);
+    });
     console.log(passed);
     console.log(score);
   }
