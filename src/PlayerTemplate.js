@@ -1,6 +1,6 @@
 class Player {
   constructor() {
-    {{ params }}
+    {{{ params }}}
     this._maxHealth = 20;
     this._health = 20;
     this._isHealing = false;

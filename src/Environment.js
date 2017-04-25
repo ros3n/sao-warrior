@@ -21,7 +21,7 @@ class Environment {
       this.findEnemies(direction, spaces);
       this.findCaptives(direction, spaces);
       this.findObsctacle(direction, adjacentSpace);
-    );
+    });
     this.findDirectionOfStairs();
   }
 

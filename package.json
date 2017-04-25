@@ -22,6 +22,7 @@
   "dependencies": {
     "warriorjs-engine": "latest",
     "mustache": "latest",
+    "babel-core": "latest",
     "babel-cli": "^6.10.1",
     "babel-eslint": "^6.1.1",
     "babel-preset-es2015": "^6.9.0",
