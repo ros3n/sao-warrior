@@ -8,7 +8,6 @@ class Player {
     this._retreatPath = [];
     this._turnedBack = false;
     this._archerKilled = false;
-    console.log(this.param);
   }
 
   playTurn(warrior) {
@@ -45,8 +44,8 @@ class Player {
       this.attack(warrior, closestEnemies[0]);
     } else if (closestCaptives.length > 0) {
       this.rescue(warrior, closestCaptives[0]);
-    // } else if (enemiesAhead) {
-    //   this.shootAhead(warrior);
+    } else if (enemiesAhead) {
+      this.shootAhead(warrior);
     } else if (this.retreatPathPresent()) {
       var direction = this.oppositeDirection(this.popRetreatPath());
       this.walk(warrior, direction);
@@ -102,7 +101,8 @@ class Player {
   }
 
   needsHealing(warrior) {
-    return !this.isHealing() && warrior.health() < 0.5 * this._maxHealth;
+    var threshold = this._healingThreshold * this._maxHealth;
+    return !this.isHealing() && warrior.health() < threshold;
   }
 
   isHealing(warrior) {
