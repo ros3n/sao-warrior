@@ -11,6 +11,7 @@ export default class Runner {
     this._params = 'this._shootingThreshold = ' + args[3] +
                     ';\n this._healingThreshold = ' + args[4] +
                     ';\n this._walkToStairsThreshold = ' + args[5] + ';\n';
+    this._debug = args[6];
   }
 
   run() {
@@ -23,6 +24,12 @@ export default class Runner {
     if (passed) {
       for (var key in score) {
         result += score[key];
+      }
+    } else if (this._debug) {
+      for (var i in events) {
+        if (events[i]['type'] == 'UNIT_SPOKE') {
+          console.log(events[i]['message']);
+        }
       }
     }
     process.stdout.write(result + '\n');

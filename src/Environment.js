@@ -112,7 +112,7 @@ class Environment {
   }
 
   obstacle(direction) {
-    return this._obstacles[direction] || false;
+    return this._obstacles[direction] || this._enemies['adjacent'][direction] || this._captives['adjacent'][direction] || false;
   }
 
   removeClearField(direction) {

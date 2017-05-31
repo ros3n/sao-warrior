@@ -22,8 +22,19 @@ class Player {
     let visibleCaptives = this.visibleCaptives(environment);
 
     let fightInMeeleeMode = function () {
+      // console.log('meelee');
       if (adjacentEnemies.length > 0) {
-        warrior.attack(adjacentEnemies[0]);
+        if (adjacentEnemies.length < 3) {
+          warrior.attack(adjacentEnemies[0]);
+        } else {
+          if (!self.move(warrior, environment)) {
+            if (adjacentCaptives.length > 0) {
+              warrior.rescue(adjacentCaptives[0]);
+            } else {
+              warrior.attack(adjacentEnemies[0]);
+            }
+          }
+        }
       } else if (visibleEnemies.length > 0 && environment.clearFields().includes(visibleEnemies[0])) {
         warrior.walk(visibleEnemies[0]);
       } else if (adjacentCaptives.length > 0) {
@@ -36,8 +47,14 @@ class Player {
     }
 
     let fightWithBowMode = function () {
+      // console.log('bow');
       if (adjacentEnemies.length > 0) {
-        warrior.walk(self.oppositeDirection(adjacentEnemies[0]));
+        var direction = self.oppositeDirection(adjacentEnemies[0]);
+        if (environment.clearFields().includes(direction)) {
+          warrior.walk(direction);
+        } else {
+          fightInMeeleeMode();
+        }
       } else if (visibleEnemies.length > 0) {
         warrior.shoot(visibleEnemies[0]);
       } else if (adjacentCaptives.length > 0) {
@@ -54,6 +71,7 @@ class Player {
     } else if (this.canFightWithBow(warrior)) {
       fightWithBowMode();
     } else {
+      // console.log('heal');
       if (this.takingDamage(warrior)) {
         var cf = environment.clearFields();
         if (cf.length > 0) {
@@ -128,15 +146,25 @@ class Player {
   walk(warrior, environment) {
     let dos = warrior.directionOfStairs();
     if (Math.random() < this._walkToStairsThreshold) {
-      warrior.walk(dos)
+      warrior.walk(dos);
     } else {
       let directions = this._directions.filter((dir) => dir != dos);
-      let direction = directions.find((dir) => environment.obstacle(dir));
+      let direction = directions.find((dir) => !environment.obstacle(dir));
       if (direction) {
         warrior.walk(direction);
       } else {
-        walk(dos);
+        warrior.walk(dos);
       }
+    }
+  }
+
+  move(warrior, environment) {
+    let direction = this._directions.find((dir) => !environment.obstacle(dir));
+    if (direction) {
+      warrior.walk(direction);
+      return true;
+    } else {
+      return false;
     }
   }
 
