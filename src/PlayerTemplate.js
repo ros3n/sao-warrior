@@ -1,107 +1,106 @@
+var Environment = require('PATH_TO_ENVIRONMENT_JS');
+
 class Player {
   constructor() {
     {{{ params }}}
+    // this._shootingThreshold
+    // this._healingThreshold
+    // this._walkToStairsThreshold
+
     this._maxHealth = 20;
     this._health = 20;
     this._isHealing = false;
     this._directions = ['left', 'right', 'backward', 'forward'];
-    this._retreatPath = [];
-    this._turnedBack = false;
-    this._archerKilled = false;
   }
 
   playTurn(warrior) {
-    if (this.enemiesBehind(warrior)) {
-      warrior.pivot();
-    } else if (warrior.health() < this._maxHealth) {
-      if (this.isHealing(warrior)) {
-        if (this.takingDamage(warrior)) {
-          this.retreat(warrior, []);
+    let self = this;
+    let environment = this.recognizeEnvironment(warrior);
+    let adjacentEnemies = this.adjacentEnemies(environment);
+    let adjacentCaptives = this.adjacentCaptives(environment);
+    let visibleEnemies = this.visibleEnemies(environment);
+    let visibleCaptives = this.visibleCaptives(environment);
+
+    let fightInMeeleeMode = function () {
+      if (adjacentEnemies.length > 0) {
+        warrior.attack(adjacentEnemies[0]);
+      } else if (visibleEnemies.length > 0) {
+        warrior.walk(visibleEnemies[0]);
+      } else if (adjacentCaptives.length > 0) {
+        warrior.rescue(adjacentCaptives[0]);
+      } else if (visibleCaptives.length > 0) {
+        warrior.walk(visibleCaptives[0]);
+      } else {
+        self.walk(warrior, environment);
+      }
+    }
+
+    let fightWithBowMode = function () {
+      if (adjacentEnemies.length > 0) {
+        warrior.walk(self.oppositeDirection(adjacentEnemies[0]));
+      } else if (visibleEnemies.length > 0) {
+        warrior.shoot(visibleEnemies[0]);
+      } else if (adjacentCaptives.length > 0) {
+        warrior.rescue(adjacentCaptives[0]);
+      } else if (visibleCaptives.length > 0) {
+        warrior.walk(visibleCaptives[0]);
+      } else {
+        self.walk(warrior, environment);
+      }
+    }
+
+    if (this.canFightInMeelee(warrior)) {
+      fightInMeeleeMode();
+    } else if (this.canFightWithBow(warrior)) {
+      fightWithBowMode();
+    } else {
+      if (this.takingDamage(warrior)) {
+        var cf = environment.clearFields();
+        if (cf.length > 0) {
+          warrior.walk(cf[0]);
         } else {
-          this.heal(warrior);
-        }
-      } else if (this.needsHealing(warrior)) {
-        var closestEnemies = this.closestEnemies(warrior);
-        if (closestEnemies.length > 0) {
-          this.retreat(warrior, closestEnemies);
-        } else {
-          this.heal(warrior);
+          fightInMeeleeMode();
         }
       } else {
-        this.proceedOrFight(warrior);
+        warrior.rest();
       }
-    } else {
-      this.proceedOrFight(warrior);
     }
+
     this.updateHealth(warrior);
   }
 
-  proceedOrFight(warrior) {
-    var closestEnemies = this.closestEnemies(warrior);
-    var closestCaptives = this.closestCaptives(warrior);
-    var enemiesAhead = this.enemiesAhead(warrior);
-    if (closestEnemies.length > 0) {
-      this.attack(warrior, closestEnemies[0]);
-    } else if (closestCaptives.length > 0) {
-      this.rescue(warrior, closestCaptives[0]);
-    } else if (enemiesAhead) {
-      this.shootAhead(warrior);
-    } else if (this.retreatPathPresent()) {
-      var direction = this.oppositeDirection(this.popRetreatPath());
-      this.walk(warrior, direction);
-    } else {
-      this.walkAhead(warrior);
-    }
+  recognizeEnvironment(warrior) {
+    let environment = new Environment(warrior);
+    environment.processWarriorSenses();
+    return environment;
   }
 
-  closestEnemies(warrior) {
-    return this._directions.filter((dir) => warrior.feel(dir).isEnemy());
+  adjacentEnemies(environment) {
+    return this._directions.filter((dir) => environment.adjacentEnemies(dir));
   }
 
-  enemiesAhead(warrior) {
-    var spaces = warrior.look();
-    var captives = spaces.findIndex((space) => space.isCaptive());
-    var enemies = spaces.findIndex((space) => space.isEnemy());
-    if (captives >= 0 && captives < enemies || enemies == -1) {
-      return false;
-    } else {
-      return true;
-    }
+  visibleEnemies(environment) {
+    return this._directions.filter((dir) => environment.visibleEnemies(dir));
   }
 
-  enemiesBehind(warrior) {
-    var spaces = warrior.look('backward');
-    var captives = spaces.findIndex((space) => space.isCaptive());
-    var enemies = spaces.findIndex((space) => space.isEnemy());
-    if (captives >= 0 && captives < enemies || enemies == -1) {
-      return false;
-    } else {
-      return true;
-    }
+  adjacentCaptives(environment) {
+    return this._directions.filter((dir) => environment.adjacentCaptives(dir));
   }
 
-  attack(warrior, direction) {
-    warrior.attack(direction);
-  }
-
-  shootAhead(warrior) {
-    warrior.shoot();
-  }
-
-  closestCaptives(warrior) {
-    return this._directions.filter((dir) => warrior.feel(dir).isCaptive());
-  }
-
-  rescue(warrior, direction) {
-    warrior.rescue(direction);
+  visibleCaptives(environment) {
+    return this._directions.filter((dir) => environment.visibleCaptives(dir));
   }
 
   canFightInMeelee(warrior) {
-    return warrior.health() > 0.8 * this._maxHealth;
+    return warrior.health() > this._shootingThreshold * this._maxHealth;
+  }
+
+  canFightWithBow(warrior) {
+    return warrior.health() > this._healingThreshold * this._maxHealth;
   }
 
   needsHealing(warrior) {
-    var threshold = this._healingThreshold * this._maxHealth;
+    let threshold = this._healingThreshold * this._maxHealth;
     return !this.isHealing() && warrior.health() < threshold;
   }
 
@@ -122,48 +121,27 @@ class Player {
     return warrior.health() < this._health;
   }
 
-  retreat(warrior, enemyPositions) {
-    var moveCandidates = this._directions.filter(
-      (dir) => !enemyPositions.includes(dir)
-    );
-    var self = this;
-    var moved = false;
-    moveCandidates.forEach(function (dir) {
-      if (warrior.feel(dir).isEmpty() && !moved) {
-        self._retreatPath.push(dir);
-        self.walk(warrior, dir);
-        moved = true;
-      }
-    });
-    return moved;
-  }
-
-  retreatPathPresent() {
-    return this._retreatPath.length > 0;
-  }
-
-  popRetreatPath() {
-    return this._retreatPath.pop();
-  }
-
-  walk(warrior, direction) {
-    warrior.walk(direction);
-  }
-
-  walkAhead(warrior) {
-    if (warrior.feel('forward').isWall()) {
-      warrior.pivot();
-    } else {
-      this.walk(warrior, warrior.directionOfStairs());
-    }
-  }
-
   updateHealth(warrior) {
     this._health = warrior.health();
   }
 
+  walk(warrior, environment) {
+    let dos = warrior.directionOfStairs();
+    if (Math.random() < this._walkToStairsThreshold) {
+      warrior.walk(dos)
+    } else {
+      let directions = this._directions.filter((dir) => dir != dos);
+      let direction = directions.find((dir) => environment.obstacle(dir));
+      if (direction) {
+        warrior.walk(direction);
+      } else {
+        walk(dos);
+      }
+    }
+  }
+
   oppositeDirection(dir) {
-    var oppositeDirs = {
+    let oppositeDirs = {
       'left': 'right',
       'right': 'left',
       'forward': 'backward',

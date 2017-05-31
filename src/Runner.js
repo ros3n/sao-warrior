@@ -8,7 +8,9 @@ export default class Runner {
   constructor(args) {
     this._args = args;
     this._towerPath = args[2];
-    this._params = 'this._healingThreshold = ' + args[3] + ';'
+    this._params = 'this._shootingThreshold = ' + args[3] +
+                    ';\n this._healingThreshold = ' + args[4] +
+                    ';\n this._walkToStairsThreshold = ' + args[5] + ';\n';
   }
 
   run() {
@@ -83,6 +85,10 @@ export default class Runner {
       },
       {
           "name": "directionOfStairs",
+          "args": []
+      },
+      {
+          "name": "distanceOf",
           "args": []
       }
     ]
