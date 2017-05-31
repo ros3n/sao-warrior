@@ -17,11 +17,13 @@ export default class Runner {
     var player = this.renderPlayerParams(template);
     var config = this.addAbilitiesToConfig(tower);
     const { passed, events, score } = playLevel(config, player);
-    // events.forEach(function (event) {
-    //   console.log(event);
-    // });
-    console.log(passed);
-    console.log(score);
+    var result = 0;
+    if (passed) {
+      for (var key in score) {
+        result += score[key];
+      }
+    }
+    process.stdout.write(result + '\n');
   }
 
   loadPlayerTemplate() {
