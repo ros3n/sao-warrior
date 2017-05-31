@@ -24,7 +24,7 @@ class Player {
     let fightInMeeleeMode = function () {
       if (adjacentEnemies.length > 0) {
         warrior.attack(adjacentEnemies[0]);
-      } else if (visibleEnemies.length > 0) {
+      } else if (visibleEnemies.length > 0 && environment.clearFields().includes(visibleEnemies[0])) {
         warrior.walk(visibleEnemies[0]);
       } else if (adjacentCaptives.length > 0) {
         warrior.rescue(adjacentCaptives[0]);
@@ -57,9 +57,9 @@ class Player {
       if (this.takingDamage(warrior)) {
         var cf = environment.clearFields();
         if (cf.length > 0) {
-          warrior.walk(cf[0]);
+          warrior.walk(cf[cf.length - 1]);
         } else {
-          fightInMeeleeMode();
+          fightWithBowMode();
         }
       } else {
         warrior.rest();
